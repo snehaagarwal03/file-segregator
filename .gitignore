@@ -1,0 +1,27 @@
+# Environment — never commit your API key
+.env
+
+# Virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# SQLite state database (local to each machine)
+state.db
+
+# Logs (auto-generated at runtime)
+logs/
+
+
+# macOS metadata
+.DS_Store
+
+# Personal reference files
+claude_chat.md
+
+# uv lock file (optional: commit this if you want reproducible installs for collaborators)
+# uv.lock
