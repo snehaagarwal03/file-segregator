@@ -1,175 +1,169 @@
 # File Segregator 🗂️
 
-An AI-powered agent that watches your **Downloads folder**, reads each new file's content, uses an LLM to generate a concise 3-word descriptive name, and automatically moves it into the right category folder — **Finance, Work, Education, Personal, Legal, or Misc**.
+An AI agent that watches your **Downloads folder** every 5 seconds. When it spots a new file, it reads the content, uses an LLM to give it a clean 3-word name, and moves it into the right folder — automatically.
 
-Built with Python + [Groq](https://console.groq.com) (LLaMA 3.3 70B).
+> Built with Python · Groq API (LLaMA 3.3 70B) · `uv` package manager
 
 ---
 
-## How it works
+## Features
 
-```
-~/Downloads (watched every 10s)
-        │
-        ▼
-[Stability check] — wait for file size to stop changing (avoids half-downloads)
-        │
-        ▼
-[Content extraction] — reads .txt / .md / .csv / .pdf / .docx
-        │
-        ▼
-[LLM reasoning] — Groq / LLaMA-3.3-70b returns:
-                   { "new_name": "bank-loan-statement",
-                     "category": "Finance",
-                     "confidence": 0.95 }
-        │
-        ├─ confidence ≥ 0.70 → ~/Downloads/sorted/Finance/bank-loan-statement.pdf
-        └─ confidence < 0.70 → ~/Downloads/sorted/Needs-Review/  (human reviews)
+- 🔍 **Watches `~/Downloads`** — polls every 5 seconds for new files
+- 🧠 **LLM-powered naming** — generates a descriptive 3-word kebab-case name (e.g. `bank-loan-statement`)
+- 📁 **Auto-categorizes** into: `Finance`, `Work`, `Education`, `Personal`, `Legal`, `Misc`
+- ⚠️ **Confidence gate** — files the LLM isn't sure about go to `Needs-Review` instead of being misfiled
+- 🔒 **No duplicate processing** — tracks every file by content hash in SQLite, so restarts are safe
+- ✅ **Stability check** — waits for a file's size to stop changing before touching it (safe for active downloads)
+- 📝 **Full activity log** — every decision is logged to console and `logs/activity.log`
+- 🧪 **Dry-run mode** — preview decisions without moving anything
+
+---
+
+## How It Works
+
+```mermaid
+flowchart TD
+    A["🕐 Poll ~/Downloads every 5s"] --> B{"New file found?"}
+    B -- No --> A
+    B -- Yes --> C["Wait for file size to stabilise\n(avoids half-downloaded files)"]
+    C --> D["Extract text content\n(.txt / .md / .csv / .pdf / .docx)"]
+    D --> E["Send content to Groq LLM\n(LLaMA 3.3 70B)"]
+    E --> F["LLM returns JSON:\nnew_name · category · confidence"]
+    F --> G{"Confidence ≥ 0.70?"}
+    G -- Yes --> H["Move to ~/Downloads/sorted/Category/new-name.ext"]
+    G -- No --> I["Move to ~/Downloads/sorted/Needs-Review/"]
+    H --> J["Log result · Record hash in SQLite"]
+    I --> J
+    J --> A
 ```
 
-**Key engineering choices:**
-- **Structured JSON output** — `response_format={"type": "json_object"}` enforced at the API level, so no regex parsing
-- **Fixed category taxonomy** with few-shot examples in the system prompt for consistent classification
-- **Hash-based dedup** in SQLite — the agent never reprocesses a file it's already handled
-- **File-stability check** — waits for file size to stabilise before reading (safe for active downloads)
-- **Confidence gate** — low-confidence files go to `Needs-Review` instead of being silently misfiled
+---
+
+## Tech Stack
+
+| Layer | Tool | Purpose |
+|---|---|---|
+| Language | Python 3.11+ | Core runtime |
+| Package manager | [uv](https://docs.astral.sh/uv/) | Fast, modern Python package manager |
+| LLM | [Groq](https://console.groq.com) — `llama-3.3-70b-versatile` | File naming + categorization |
+| Scheduling | `schedule` | Polling loop every N seconds |
+| PDF reading | `pdfplumber` | Extracts text from PDF files |
+| Word reading | `python-docx` | Extracts text from `.docx` files |
+| State tracking | `sqlite3` (built-in) | Remembers processed files across restarts |
+| Config | `python-dotenv` | Loads settings from `.env` |
 
 ---
 
 ## Prerequisites
 
-| Tool | Install |
-|---|---|
-| Python 3.11+ | Pre-installed on most Macs, or `uv python install 3.11` |
-| [uv](https://docs.astral.sh/uv/) | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
-| Groq API key | Free at [console.groq.com/keys](https://console.groq.com/keys) |
+Before you begin, make sure you have:
+
+1. **Python 3.11+** — check with `python3 --version`
+2. **uv** — install with:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+3. **A free Groq API key** — get one at [console.groq.com/keys](https://console.groq.com/keys) (no credit card needed)
 
 ---
 
-## Setup (copy-paste)
+## Setup
 
 ```bash
-# 1. Clone the repo
+# 1. Clone the repository
 git clone https://github.com/YOUR_USERNAME/file-segregator.git
 cd file-segregator
 
-# 2. Create the virtual environment and install dependencies
+# 2. Install all dependencies
 uv sync
 
-# 3. Set up your API key
+# 3. Create your config file
 cp .env.example .env
-# Open .env and replace 'your_groq_api_key_here' with your actual key
+
+# 4. Open .env and add your Groq API key
+#    Replace: GROQ_API_KEY=your_groq_api_key_here
+#    With:    GROQ_API_KEY=gsk_...your actual key...
 ```
 
-That's it. No other config needed — the agent watches `~/Downloads` by default.
+That's it — no other configuration needed. The agent watches `~/Downloads` by default.
 
 ---
 
 ## Running
 
 ```bash
-# Dry run — shows what it WOULD do, no files are actually moved (great for testing)
+# Recommended: dry run first — shows what the agent WOULD do, without moving any files
 uv run python main.py --dry-run
 
-# Normal run — watches ~/Downloads and organises files in real time
+# Normal run — starts watching and organizing files in real time
 uv run python main.py
 
-# Override the poll interval (default: 10 seconds)
-uv run python main.py --interval 5
+# Change the polling interval (default is 5 seconds)
+uv run python main.py --interval 15
 
-# Watch a different folder (overrides .env setting)
+# Watch a custom folder instead of ~/Downloads
 uv run python main.py --watch-folder /path/to/folder
 ```
 
-Press `Ctrl+C` to stop the agent.
+Press `Ctrl+C` to stop the agent at any time.
 
 ---
 
-## Configuration
+## Output Structure
 
-All settings can be changed in `.env` — **no code editing needed**:
+Once the agent runs, sorted files appear here:
+
+```
+~/Downloads/sorted/
+├── Finance/          ← invoices, bank statements, tax documents
+├── Work/             ← meeting notes, reports, job descriptions
+├── Education/        ← course notes, syllabi, research papers
+├── Personal/         ← letters, personal documents
+├── Legal/            ← contracts, agreements, affidavits
+├── Misc/             ← anything that doesn't fit elsewhere
+└── Needs-Review/     ← low-confidence files for you to check manually
+```
+
+---
+
+## Configuration (Optional)
+
+All settings live in `.env`. You only need to change these if you want custom paths:
 
 | Variable | Default | Description |
 |---|---|---|
 | `GROQ_API_KEY` | *(required)* | Your Groq API key |
 | `WATCH_FOLDER` | `~/Downloads` | Folder the agent monitors |
-| `SORTED_ROOT` | `~/Downloads/sorted` | Root folder for organised output |
+| `SORTED_ROOT` | `~/Downloads/sorted` | Where organized files are placed |
 
-Example `.env`:
-```bash
-GROQ_API_KEY=gsk_abc123...
-WATCH_FOLDER=/Users/yourname/Downloads
-SORTED_ROOT=/Users/yourname/Downloads/sorted
+---
+
+## Activity Log
+
+Every action is printed to the console and saved to `logs/activity.log`:
+
+```
+2024-01-15 10:32:00 [INFO] File Segregator agent starting
+2024-01-15 10:32:00 [INFO] Watching: /Users/you/Downloads
+2024-01-15 10:32:01 [INFO] Processing new file: invoice_dec.pdf
+2024-01-15 10:32:03 [INFO] LLM decision: name='december-consulting-invoice', category='Finance', confidence=0.95
+2024-01-15 10:32:03 [INFO] Moved 'invoice_dec.pdf' -> '.../sorted/Finance/december-consulting-invoice.pdf'
 ```
 
 ---
 
-## Output structure
-
-After running, sorted files appear in:
-
-```
-~/Downloads/sorted/
-├── Finance/          # invoices, bank statements, tax docs
-├── Work/             # meeting notes, reports, presentations
-├── Education/        # syllabi, lecture notes, research papers
-├── Personal/         # letters, photos descriptions, personal docs
-├── Legal/            # contracts, agreements, forms
-├── Misc/             # anything that doesn't fit cleanly
-└── Needs-Review/     # low-confidence classifications for you to check
-```
-
----
-
-## Supported file types
-
-| Extension | Extraction method |
-|---|---|
-| `.txt` `.md` `.csv` | Direct text read |
-| `.pdf` | `pdfplumber` (text-layer PDFs) |
-| `.docx` | `python-docx` |
-
----
-
-## Project structure
+## Project Structure
 
 ```
 file-segregator/
-├── .env.example        # Copy to .env and add your API key
-├── pyproject.toml      # uv project manifest + dependencies
-├── config.py           # All settings (paths, categories, thresholds)
-├── main.py             # Entry point — CLI args, scheduler loop
-├── watcher.py          # Polls the watch folder; stability check
-├── extractor.py        # File → text (dispatches by extension)
-├── llm_agent.py        # Builds prompt, calls Groq, parses JSON
-├── file_actions.py     # Renames + moves files (only fs-mutating module)
-├── state_store.py      # SQLite dedup tracking
-└── logs/               # activity.log auto-created at runtime
+├── .env.example      ← copy to .env and add your API key
+├── pyproject.toml    ← project dependencies (managed by uv)
+├── config.py         ← all settings: paths, categories, thresholds
+├── main.py           ← entry point — CLI args + polling loop
+├── watcher.py        ← detects new stable files in the watch folder
+├── extractor.py      ← reads file content based on extension
+├── llm_agent.py      ← builds the prompt, calls Groq, parses JSON response
+├── file_actions.py   ← renames and moves files (the only module that touches the filesystem)
+├── state_store.py    ← SQLite tracking — prevents duplicate processing
+└── logs/             ← activity.log is auto-created here at runtime
 ```
-
----
-
-## Activity log
-
-Every decision is logged to `logs/activity.log` and the console:
-
-```
-2024-01-15 10:32:01 [INFO] Processing new file: invoice_dec.pdf
-2024-01-15 10:32:03 [INFO] LLM decision: name='december-consulting-invoice', category='Finance', confidence=0.95
-2024-01-15 10:32:03 [INFO] Moved 'invoice_dec.pdf' -> '/Users/you/Downloads/sorted/Finance/december-consulting-invoice.pdf'
-```
-
----
-
-## Tech stack
-
-| Layer | Tool |
-|---|---|
-| Language | Python 3.11+ |
-| Package manager | [uv](https://docs.astral.sh/uv/) |
-| LLM | Groq — `llama-3.3-70b-versatile` |
-| Scheduling | `schedule` (polling every N seconds) |
-| PDF extraction | `pdfplumber` |
-| Word extraction | `python-docx` |
-| State tracking | `sqlite3` (built-in, no server) |
-| Config | `python-dotenv` |

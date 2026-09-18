@@ -44,7 +44,7 @@ CONFIDENCE_THRESHOLD = 0.70
 NEEDS_REVIEW_FOLDER = "Needs-Review"
 
 # ---- Watcher behaviour ----
-POLL_INTERVAL_SECONDS = 10          # how often we scan the watch folder
+POLL_INTERVAL_SECONDS = 5           # how often we scan the watch folder
 STABILITY_CHECKS = 1                # how many consecutive equal-size polls before a file is "stable"
 
 # ---- LLM settings ----
