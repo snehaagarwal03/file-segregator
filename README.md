@@ -2,7 +2,7 @@
 
 An AI agent that watches your **Downloads folder** every 5 seconds. When it spots a new file, it reads the content, uses an LLM to give it a clean 3-word name, and moves it directly into a category folder inside Downloads — automatically.
 
-> Built with Python · Groq API (LLaMA 3.3 70B) · `uv` package manager
+> Built with Python · Groq API (LLaMA 3.3 70B) 
 
 ---
 

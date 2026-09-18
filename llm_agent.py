@@ -58,8 +58,8 @@ Respond with ONLY a valid JSON object in this exact format, no extra commentary:
 Content: "Sneha Agarwal | Software Engineer | Skills: Python, React | Experience: XYZ Corp intern"
 Response: {{"new_name": "sneha-agarwal-resume", "category": "Resume", "confidence": 0.97}}
 
-Content: "Role: Software Engineering Intern. Responsibilities: Build REST APIs. Requirements: Python, 1yr exp."
-Response: {{"new_name": "software-engineering-internship-jd", "category": "JobDescription", "confidence": 0.95}}
+Content: "Company: XYZ Corp. Role: Software Engineering Intern. Responsibilities: Build REST APIs. Requirements: Python, 1yr exp."
+Response: {{"new_name": "xyz-sde-jd", "category": "JobDescription", "confidence": 0.95}}
 
 Content: "Invoice #1042. Consulting services for Q3. Amount due: $4,500. Payment terms: Net 30."
 Response: {{"new_name": "consulting-invoice-q3", "category": "Invoice", "confidence": 0.96}}
@@ -76,8 +76,6 @@ Response: {{"new_name": "residential-lease-agreement", "category": "Legal", "con
 Content: "Sprint planning notes. Velocity: 42 pts. Tickets assigned: auth module, dashboard redesign."
 Response: {{"new_name": "sprint-planning-notes", "category": "Work", "confidence": 0.91}}
 
-Content: "Dear Sneha, We are pleased to extend an offer for the role of SDE-1 at Accenture. CTC: 8 LPA."
-Response: {{"new_name": "accenture-offer-letter", "category": "OfferLetter", "confidence": 0.97}}
 """
 
 
