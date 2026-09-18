@@ -22,10 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent
 # Override by setting WATCH_FOLDER=/your/path in .env
 WATCH_FOLDER = Path(os.getenv("WATCH_FOLDER", Path.home() / "Downloads"))
 
-# Root folder where sorted files end up (Finance/, Personal/, etc. created under here).
-# Default: ~/Downloads/sorted/
-# Override by setting SORTED_ROOT=/your/path in .env
-SORTED_ROOT = Path(os.getenv("SORTED_ROOT", Path.home() / "Downloads" / "sorted"))
+# Root folder where category subfolders are created (e.g. Resume/, Finance/).
+# Default: ~/Downloads — category folders appear directly inside Downloads.
+# Override by setting CATEGORIES_ROOT=/your/path in .env
+CATEGORIES_ROOT = Path(os.getenv("CATEGORIES_ROOT", Path.home() / "Downloads"))
 
 # SQLite database file used for dedup / processed-file tracking
 DB_PATH = BASE_DIR / "state.db"
@@ -34,13 +34,17 @@ DB_PATH = BASE_DIR / "state.db"
 LOG_DIR = BASE_DIR / "logs"
 LOG_FILE = LOG_DIR / "activity.log"
 
-# ---- Fixed category list (must match what the LLM is told to choose from) ----
-CATEGORIES = ["Finance", "Personal", "Work", "Education", "Legal", "Misc"]
+# ---- Category hints for the LLM (not a fixed list — LLM can create new ones) ----
+# These are examples shown in the prompt to guide naming style and conventions.
+CATEGORY_HINTS = [
+    "Resume", "JobDescription", "Finance", "Invoice", "Certificate",
+    "Education", "Legal", "Personal", "Work", "ProjectReport", "Misc"
+]
 
 # Files below this confidence go to Needs-Review instead of their predicted category
 CONFIDENCE_THRESHOLD = 0.70
 
-# Name of the "quarantine" folder for low-confidence classifications
+# Name of the folder for low-confidence classifications
 NEEDS_REVIEW_FOLDER = "Needs-Review"
 
 # ---- Watcher behaviour ----
@@ -56,8 +60,9 @@ SUPPORTED_EXTENSIONS = {".txt", ".md", ".csv", ".pdf", ".docx"}
 
 
 def ensure_folders_exist():
-    """Create the sorted category folders and log folder if missing."""
+    """Create the log folder if missing.
+    Category folders (Resume/, Finance/, etc.) are created on the spot
+    when the first file is classified into that category.
+    """
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    SORTED_ROOT.mkdir(parents=True, exist_ok=True)
-    for category in CATEGORIES + [NEEDS_REVIEW_FOLDER]:
-        (SORTED_ROOT / category).mkdir(parents=True, exist_ok=True)
+    CATEGORIES_ROOT.mkdir(parents=True, exist_ok=True)

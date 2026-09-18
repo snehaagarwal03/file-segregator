@@ -1,6 +1,6 @@
 # File Segregator 🗂️
 
-An AI agent that watches your **Downloads folder** every 5 seconds. When it spots a new file, it reads the content, uses an LLM to give it a clean 3-word name, and moves it into the right folder — automatically.
+An AI agent that watches your **Downloads folder** every 5 seconds. When it spots a new file, it reads the content, uses an LLM to give it a clean 3-word name, and moves it directly into a category folder inside Downloads — automatically.
 
 > Built with Python · Groq API (LLaMA 3.3 70B) · `uv` package manager
 
@@ -30,8 +30,8 @@ flowchart TD
     D --> E["Send content to Groq LLM\n(LLaMA 3.3 70B)"]
     E --> F["LLM returns JSON:\nnew_name · category · confidence"]
     F --> G{"Confidence ≥ 0.70?"}
-    G -- Yes --> H["Move to ~/Downloads/sorted/Category/new-name.ext"]
-    G -- No --> I["Move to ~/Downloads/sorted/Needs-Review/"]
+    G -- Yes --> H["Move to ~/Downloads/Finance/bank-loan-statement.pdf"]
+    G -- No --> I["Move to ~/Downloads/Needs-Review/"]
     H --> J["Log result · Record hash in SQLite"]
     I --> J
     J --> A
@@ -111,10 +111,10 @@ Press `Ctrl+C` to stop the agent at any time.
 
 ## Output Structure
 
-Once the agent runs, sorted files appear here:
+Category folders are created **directly inside `~/Downloads`** — no extra nesting:
 
 ```
-~/Downloads/sorted/
+~/Downloads/
 ├── Finance/          ← invoices, bank statements, tax documents
 ├── Work/             ← meeting notes, reports, job descriptions
 ├── Education/        ← course notes, syllabi, research papers
@@ -123,6 +123,8 @@ Once the agent runs, sorted files appear here:
 ├── Misc/             ← anything that doesn't fit elsewhere
 └── Needs-Review/     ← low-confidence files for you to check manually
 ```
+
+These folders are created automatically when the agent starts — you don't need to make them manually.
 
 ---
 
@@ -134,7 +136,7 @@ All settings live in `.env`. You only need to change these if you want custom pa
 |---|---|---|
 | `GROQ_API_KEY` | *(required)* | Your Groq API key |
 | `WATCH_FOLDER` | `~/Downloads` | Folder the agent monitors |
-| `SORTED_ROOT` | `~/Downloads/sorted` | Where organized files are placed |
+| `SORTED_ROOT` | `~/Downloads` | Where category subfolders are created |
 
 ---
 
@@ -147,7 +149,7 @@ Every action is printed to the console and saved to `logs/activity.log`:
 2024-01-15 10:32:00 [INFO] Watching: /Users/you/Downloads
 2024-01-15 10:32:01 [INFO] Processing new file: invoice_dec.pdf
 2024-01-15 10:32:03 [INFO] LLM decision: name='december-consulting-invoice', category='Finance', confidence=0.95
-2024-01-15 10:32:03 [INFO] Moved 'invoice_dec.pdf' -> '.../sorted/Finance/december-consulting-invoice.pdf'
+2024-01-15 10:32:03 [INFO] Moved 'invoice_dec.pdf' -> '.../Downloads/Finance/december-consulting-invoice.pdf'
 ```
 
 ---

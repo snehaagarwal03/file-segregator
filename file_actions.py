@@ -9,7 +9,7 @@ import re
 import shutil
 import logging
 
-from config import SORTED_ROOT, NEEDS_REVIEW_FOLDER, CONFIDENCE_THRESHOLD
+from config import CATEGORIES_ROOT, NEEDS_REVIEW_FOLDER, CONFIDENCE_THRESHOLD
 
 logger = logging.getLogger("file_segregator")
 
@@ -52,7 +52,9 @@ def move_file(filepath, llm_result, dry_run=False):
         final_category = category
 
     clean_name = sanitize_name(raw_name)
-    destination_folder = SORTED_ROOT / final_category
+    destination_folder = CATEGORIES_ROOT / final_category
+    # Create the category folder on the spot if it doesn't exist yet
+    destination_folder.mkdir(parents=True, exist_ok=True)
     destination_path = resolve_collision(destination_folder, clean_name, filepath.suffix.lower())
 
     if dry_run:

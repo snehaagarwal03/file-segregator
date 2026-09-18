@@ -120,7 +120,7 @@ def main():
     logger.info("=" * 60)
     logger.info("File Segregator agent starting")
     logger.info(f"Watching:      {config.WATCH_FOLDER}")
-    logger.info(f"Sorted output: {config.SORTED_ROOT}")
+    logger.info(f"Categories root: {config.CATEGORIES_ROOT}")
     logger.info(f"Polling every {interval} seconds | dry_run={args.dry_run}")
     logger.info("=" * 60)
 
